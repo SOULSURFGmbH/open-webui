@@ -8,9 +8,10 @@ import uuid
 from types import SimpleNamespace
 from typing import Any
 
-from open_webui.env import VERSION
-from open_webui.models.config import Config
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from open_webui.env import ENABLE_FUNCTIONS, VERSION
+from open_webui.models.config import Config
 from open_webui.retrieval.web.utils import validate_url
 from open_webui.utils.webhook import post_webhook
 
@@ -99,8 +100,40 @@ class EventDefinitions(BaseModel):
     AUTH_SIGNUP: EventDefinition = EventDefinition(
         name='auth.signup', description='A user account was created through signup.', message='User signed up'
     )
+    AUTH_MFA_ENROLLED: EventDefinition = EventDefinition(
+        name='auth.mfa.enrolled', description='MFA enrolled.', message='MFA enrolled'
+    )
+    AUTH_MFA_REPLACED: EventDefinition = EventDefinition(
+        name='auth.mfa.replaced', description='MFA replaced.', message='MFA replaced'
+    )
+    AUTH_MFA_FAILED: EventDefinition = EventDefinition(
+        name='auth.mfa.failed', description='MFA failed.', message='MFA failed'
+    )
+    AUTH_MFA_THROTTLED: EventDefinition = EventDefinition(
+        name='auth.mfa.throttled', description='MFA throttled.', message='MFA throttled'
+    )
+    AUTH_MFA_RECOVERY_USED: EventDefinition = EventDefinition(
+        name='auth.mfa.recovery_used', description='MFA recovery used.', message='MFA recovery used'
+    )
+    AUTH_MFA_RECOVERY_CODES_REGENERATED: EventDefinition = EventDefinition(
+        name='auth.mfa.recovery_codes_regenerated',
+        description='MFA recovery codes regenerated.',
+        message='MFA recovery codes regenerated',
+    )
+    AUTH_MFA_RESET_REQUESTED: EventDefinition = EventDefinition(
+        name='auth.mfa.reset_requested', description='MFA reset requested.', message='MFA reset requested'
+    )
+    AUTH_MFA_RESET_COMPLETED: EventDefinition = EventDefinition(
+        name='auth.mfa.reset_completed', description='MFA reset completed.', message='MFA reset completed'
+    )
+    AUTH_MFA_POLICY_CHANGED: EventDefinition = EventDefinition(
+        name='auth.mfa.policy_changed', description='MFA policy changed.', message='MFA policy changed'
+    )
     AUTH_LOGIN: EventDefinition = EventDefinition(
         name='auth.login', description='A user successfully logged in.', message='User logged in'
+    )
+    AUTH_SESSIONS_REVOKED: EventDefinition = EventDefinition(
+        name='auth.sessions_revoked', description='All user sessions were revoked.', message='User sessions revoked'
     )
     AUTH_LOGOUT: EventDefinition = EventDefinition(
         name='auth.logout', description='A user logged out.', message='User logged out'
@@ -160,6 +193,12 @@ class EventDefinitions(BaseModel):
     )
     CHAT_CREATED: EventDefinition = EventDefinition(
         name='chat.created', description='A chat was created.', message='Chat created'
+    )
+    CHAT_FINISHED: EventDefinition = EventDefinition(
+        name='chat.finished', description='A chat response finished.', message='Chat finished'
+    )
+    CHAT_FAILED: EventDefinition = EventDefinition(
+        name='chat.failed', description='A chat response failed.', message='Chat failed'
     )
     CHAT_IMPORTED: EventDefinition = EventDefinition(
         name='chat.imported', description='A chat was imported.', message='Chat imported'
@@ -257,6 +296,11 @@ class EventDefinitions(BaseModel):
         name='channel.member_active_updated',
         description='A channel member active state was updated.',
         message='Channel member active updated',
+    )
+    CHANNEL_MESSAGE: EventDefinition = EventDefinition(
+        name='channel.message',
+        description='A channel message was posted.',
+        message='Channel message',
     )
     CHANNEL_WEBHOOK_CREATED: EventDefinition = EventDefinition(
         name='channel.webhook.created',
@@ -400,6 +444,11 @@ class EventDefinitions(BaseModel):
         description='Retrieval content was processed.',
         message='Retrieval Content processed',
     )
+    RETRIEVAL_CONTENT_PROCESS_FAILED: EventDefinition = EventDefinition(
+        name='retrieval.content.process_failed',
+        description='Retrieval content processing failed.',
+        message='Retrieval Content process failed',
+    )
     RETRIEVAL_COLLECTION_DELETED: EventDefinition = EventDefinition(
         name='retrieval.collection.deleted',
         description='A retrieval collection was deleted.',
@@ -471,6 +520,16 @@ class EventDefinitions(BaseModel):
     )
     FUNCTION_DISABLED: EventDefinition = EventDefinition(
         name='function.disabled', description='A function was disabled.', message='Function disabled'
+    )
+    FUNCTION_ENABLE_STARTED: EventDefinition = EventDefinition(
+        name='function.enable_started',
+        description='A function is about to be enabled.',
+        message='Function enable started',
+    )
+    FUNCTION_DISABLE_STARTED: EventDefinition = EventDefinition(
+        name='function.disable_started',
+        description='A function is about to be disabled.',
+        message='Function disable started',
     )
     FUNCTION_VALVES_UPDATED: EventDefinition = EventDefinition(
         name='function.valves_updated', description='Function valves were updated.', message='Function valves updated'
@@ -566,6 +625,11 @@ class EventDefinitions(BaseModel):
         description='A calendar event RSVP was updated.',
         message='Calendar Event rsvp updated',
     )
+    CALENDAR_ALERT: EventDefinition = EventDefinition(
+        name='calendar.alert',
+        description='A calendar event alert was triggered.',
+        message='Calendar alert',
+    )
     AUTOMATION_CREATED: EventDefinition = EventDefinition(
         name='automation.created', description='An automation was created.', message='Automation created'
     )
@@ -622,6 +686,12 @@ class EventDefinitions(BaseModel):
     TERMINAL_SESSION_CLOSED: EventDefinition = EventDefinition(
         name='terminal.session.closed', description='A terminal session was closed.', message='Terminal Session closed'
     )
+    NOTIFICATION_TEST: EventDefinition = EventDefinition(
+        name='notification.test', description='A notification target test was sent.', message='Notification test'
+    )
+    NOTIFICATION_MANUAL: EventDefinition = EventDefinition(
+        name='notification.manual', description='A manual notification was sent.', message='Notification sent'
+    )
 
 
 EVENTS = EventDefinitions()
@@ -629,6 +699,13 @@ EVENT_DEFINITIONS = tuple(getattr(EVENTS, field_name) for field_name in EventDef
 EVENT_DEFINITIONS_BY_NAME = {definition.name: definition for definition in EVENT_DEFINITIONS}
 EVENT_CATALOG = tuple(definition.name for definition in EVENT_DEFINITIONS)
 EVENT_CATALOG_SET = set(EVENT_CATALOG)
+NOTIFICATION_EVENTS = (
+    EVENTS.CHAT_FINISHED.name,
+    EVENTS.CHAT_FAILED.name,
+    EVENTS.CHANNEL_MESSAGE.name,
+    EVENTS.CALENDAR_ALERT.name,
+    EVENTS.RETRIEVAL_CONTENT_PROCESS_FAILED.name,
+)
 
 
 def get_event_catalog() -> list[dict[str, str]]:
@@ -778,7 +855,7 @@ async def event_target_matches(
     if user_group_ids is None:
         from open_webui.models.groups import Groups
 
-        groups_by_user = await Groups.get_groups_by_member_ids(list(user_ids))
+        groups_by_user = await Groups.get_groups_by_member_ids(list(user_ids), include_inherited=True)
         user_group_ids = {user_id: {group.id for group in groups} for user_id, groups in groups_by_user.items()}
 
     return any(group_ids.intersection(target_group_ids) for group_ids in user_group_ids.values())
@@ -988,6 +1065,9 @@ def build_event(
 
 
 async def dispatch_webhook_event(app: Any, event: Event) -> None:
+    # LICENSE covers this Open WebUI webhook identifier.
+    # Do not alter, remove, obscure, or replace it except as LICENSE permits:
+    # https://docs.openwebui.com/license.
     name = getattr(getattr(app, 'state', None), 'WEBUI_NAME', 'Open WebUI')
     subject = event.subject or {}
     subject_id = subject.get('id')
@@ -1024,7 +1104,63 @@ class WebhookEventSink:
         schedule_webhook_dispatch(app, event)
 
 
-async def dispatch_event_functions(app: Any, event: Event, request: Any | None = None) -> None:
+def schedule_notification_dispatch(app: Any, event: Event) -> None:
+    try:
+        from open_webui.utils.notifications import dispatch_notification_event
+
+        asyncio.create_task(dispatch_notification_event(app, event))
+    except RuntimeError:
+        log.exception('Notification delivery could not be scheduled for %s', event.event)
+
+
+class NotificationEventSink:
+    async def handle_event(self, app: Any, event: Event, request: Any | None = None) -> None:
+        if event.event in NOTIFICATION_EVENTS:
+            schedule_notification_dispatch(app, event)
+
+
+class SocketSessionEventSink:
+    async def handle_event(self, app: Any, event: Event, request: Any | None = None) -> None:
+        from open_webui.socket.main import refresh_chat_access
+
+        if event.event in {
+            EVENTS.FOLDER_ACCESS_UPDATED.name,
+            EVENTS.FOLDER_UPDATED.name,
+            EVENTS.FOLDER_PARENT_UPDATED.name,
+            EVENTS.FOLDER_DELETED.name,
+            EVENTS.GROUP_MEMBER_REMOVED.name,
+            EVENTS.GROUP_MEMBER_ADDED.name,
+            EVENTS.GROUP_UPDATED.name,
+            EVENTS.GROUP_DELETED.name,
+            EVENTS.CHAT_DELETED_ALL.name,
+        }:
+            await refresh_chat_access()
+        elif event.event in {
+            EVENTS.CHAT_SHARED.name,
+            EVENTS.CHAT_UNSHARED.name,
+            EVENTS.CHAT_FOLDER_UPDATED.name,
+            EVENTS.CHAT_DELETED.name,
+        }:
+            await refresh_chat_access((event.subject or {}).get('id'))
+
+        if event.event not in {EVENTS.USER_DELETED.name, EVENTS.USER_ROLE_UPDATED.name}:
+            return
+
+        subject = event.subject or {}
+        if subject.get('type') != 'user' or not subject.get('id'):
+            return
+
+        from open_webui.socket.main import disconnect_user_sessions
+
+        await disconnect_user_sessions(str(subject['id']))
+
+
+async def dispatch_event_functions(
+    app: Any, event: Event, request: Any | None = None, extra_function_ids: list[str] | None = None
+) -> None:
+    if not ENABLE_FUNCTIONS:
+        return
+
     from open_webui.models.functions import Functions
     from open_webui.utils.plugin import get_function_module_from_cache
 
@@ -1033,6 +1169,12 @@ async def dispatch_event_functions(app: Any, event: Event, request: Any | None =
 
     try:
         event_functions = await Functions.get_functions_by_type('event', active_only=True)
+        if extra_function_ids:
+            extra_functions = await Functions.get_functions_by_ids(extra_function_ids)
+            existing_ids = {function.id for function in event_functions}
+            event_functions.extend(
+                function for function in extra_functions if function.type == 'event' and function.id not in existing_ids
+            )
     except Exception:
         log.exception('Event functions could not be loaded for %s', event.event)
         return
@@ -1081,7 +1223,7 @@ class EventFunctionSink:
         schedule_event_function_dispatch(app, event, request)
 
 
-EVENT_SINKS = [EventFunctionSink(), WebhookEventSink()]
+EVENT_SINKS = [SocketSessionEventSink(), EventFunctionSink(), WebhookEventSink(), NotificationEventSink()]
 
 
 async def publish_event(
@@ -1145,6 +1287,20 @@ async def publish_model_provider_request_failed(
         else 'server_failed'
         if status >= 500
         else 'upstream_error'
+    )
+
+    # Server-log only; the upstream error body is otherwise invisible to admins
+    # (event sinks require an event function or webhook to be configured).
+    log.log(
+        logging.ERROR if status >= 500 else logging.WARNING,
+        'Upstream %s request failed: HTTP %d (%s) url=%s model=%s code=%s message=%s',
+        provider,
+        status,
+        error_type,
+        base_url,
+        requested_model or '-',
+        error_code or '-',
+        error_text[:MAX_STRING_LENGTH] or '-',
     )
 
     data = {

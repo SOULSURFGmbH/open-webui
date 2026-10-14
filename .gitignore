@@ -313,3 +313,6 @@ cypress/screenshots
 .cptr
 /.junie/
 /.ai/
+
+# Local development task state
+/development/

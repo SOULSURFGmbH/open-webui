@@ -9,7 +9,7 @@
 
 	import { toast } from 'svelte-sonner';
 
-	import { selectedFolder } from '$lib/stores';
+	import { selectedFolder, user } from '$lib/stores';
 
 	import {
 		deleteFolderById,
@@ -43,14 +43,14 @@
 	let deleteFolderContents = true;
 
 	const updateHandler = async ({ name, meta, data }) => {
-		if (name === '') {
+		name = name?.trim();
+		if (!name) {
 			toast.error($i18n.t('Folder name cannot be empty.'));
 			return;
 		}
 
 		const currentName = folder.name;
 
-		name = name.trim();
 		folder.name = name;
 
 		const res = await updateFolderById(localStorage.token, folder.id, {
@@ -77,8 +77,9 @@
 				return null;
 			});
 
-			await selectedFolder.set(_folder);
-			onUpdate(_folder);
+			const updatedFolder = { ...folder, ..._folder };
+			await selectedFolder.set(updatedFolder);
+			onUpdate(updatedFolder);
 		}
 	};
 
@@ -102,8 +103,9 @@
 				return null;
 			});
 
-			await selectedFolder.set(_folder);
-			onUpdate(_folder);
+			const updatedFolder = { ...folder, ..._folder };
+			await selectedFolder.set(updatedFolder);
+			onUpdate(updatedFolder);
 		}
 	};
 
@@ -138,12 +140,11 @@
 	};
 
 	const createSubFolderHandler = async ({ name, meta, data, parent_id }) => {
-		if (name === '') {
+		name = name?.trim();
+		if (!name) {
 			toast.error($i18n.t('Folder name cannot be empty.'));
 			return;
 		}
-
-		name = name.trim();
 
 		const res = await createNewFolder(localStorage.token, {
 			name,
@@ -227,7 +228,7 @@
 				>
 					<button
 						aria-label={$i18n.t('Change folder icon')}
-						class=" rounded-full bg-gray-50 dark:bg-gray-800 size-11 flex justify-center items-center"
+						class="rounded-full bg-gray-50 dark:bg-gray-800 size-11 flex justify-center items-center outline-hidden focus:outline-hidden"
 					>
 						{#if folder?.meta?.icon}
 							<Emoji className="size-6" shortCode={folder.meta.icon} />
@@ -246,6 +247,7 @@
 		{#if !readOnly}
 			<div class="flex items-center translate-x-2.5">
 				<FolderMenu
+					canShare={$user?.role === 'admin' || folder.user_id === $user?.id}
 					align="end"
 					onEdit={() => {
 						showFolderModal = true;

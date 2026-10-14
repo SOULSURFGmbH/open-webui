@@ -4,6 +4,7 @@ import re
 import time
 from typing import Any, Optional
 
+from open_webui.config import RAG_EMBEDDING_QUERY_PREFIX
 from open_webui.models.config import Config
 from open_webui.models.knowledge import KnowledgeModel
 
@@ -46,7 +47,7 @@ def _normalize_result(result: dict, mapping: dict, knowledge: KnowledgeModel, di
     source_name = source or title or metadata.get('source') or metadata.get('name') or knowledge.name
     metadata.update(
         {
-            'name': title or source_name,
+            'name': title or metadata.get('name') or source_name,
             'source': source_name,
             'url': url,
             'file_id': document_id or f'external-{knowledge.id}',
@@ -103,7 +104,7 @@ async def _retrieve_qdrant(connection, auth_config, knowledge, query, count, emb
     source_config = _source_config(knowledge)
     vector_field = source_config.get('vector_field') or None
 
-    vector = await embedding_function(query)
+    vector = await embedding_function(query, prefix=RAG_EMBEDDING_QUERY_PREFIX)
 
     def _search():
         client = QdrantClient(
@@ -152,7 +153,7 @@ async def _retrieve_milvus(connection, auth_config, knowledge, query, count, emb
     content_field = source_config.get('content_field') or 'data.text'
     metadata_field = source_config.get('metadata_field') or 'metadata'
 
-    vector = await embedding_function(query)
+    vector = await embedding_function(query, prefix=RAG_EMBEDDING_QUERY_PREFIX)
 
     def _search():
         client_kwargs = {
@@ -207,6 +208,7 @@ async def _retrieve_milvus(connection, auth_config, knowledge, query, count, emb
 async def _retrieve_pgvector(connection, auth_config, knowledge, query, count, embedding_function) -> list[dict]:
     try:
         import psycopg
+        from pgvector import Vector
         from pgvector.psycopg import register_vector
         from psycopg.rows import dict_row
     except ImportError as exc:
@@ -229,7 +231,7 @@ async def _retrieve_pgvector(connection, auth_config, knowledge, query, count, e
     metadata_field = source_config.get('metadata_field') or 'vmetadata'
     document_id_field = source_config.get('document_id_field') or 'id'
 
-    vector = await embedding_function(query)
+    vector = await embedding_function(query, prefix=RAG_EMBEDDING_QUERY_PREFIX)
 
     def _search():
         from psycopg import sql
@@ -274,7 +276,7 @@ async def _retrieve_pgvector(connection, auth_config, knowledge, query, count, e
                         table_name=table_identifier,
                         collection=collection_identifier,
                     ),
-                    (vector, collection_name, count),
+                    (Vector(vector), collection_name, count),
                 )
                 return cur.fetchall()
 
